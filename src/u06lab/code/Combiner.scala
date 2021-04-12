@@ -13,11 +13,14 @@ trait Functions {
 
 object FunctionsImpl extends Functions {
 
-  override def sum(a: List[Double]): Double = ???
+  override def sum(a: List[Double]): Double = a.sum
 
-  override def concat(a: Seq[String]): String = ???
+  override def concat(a: Seq[String]): String = a.mkString
 
-  override def max(a: List[Int]): Int = ???
+  override def max(a: List[Int]): Int = a match {
+    case Nil => Int.MinValue
+    case _  => a.max
+  }
 }
 
 
@@ -39,7 +42,42 @@ trait Combiner[A] {
   def combine(a: A, b: A): A
 }
 
-object TryFunctions extends App {
+trait CombinerFactory {
+  implicit def adder: Combiner[Double]
+  implicit def concatenator: Combiner[String]
+  implicit def maximizer: Combiner[Int]
+}
+
+object CombinerFactory extends CombinerFactory {
+
+  private def combiner[A](u: A, comb:(A, A) => A): Combiner[A] = new Combiner[A] {
+    override def unit: A = u
+    override def combine(a: A, b: A): A = comb(a, b)
+  }
+
+  override implicit def adder: Combiner[Double] = combiner(0.0, (a, b) => a+b)
+
+  override implicit def concatenator: Combiner[String] = combiner("", (a, b) => a+b)
+
+  override implicit def maximizer: Combiner[Int] = combiner(Int.MinValue, (a, b) => math.max(a, b))
+}
+
+object FunctionsCombiner extends Functions {
+  import CombinerFactory._
+
+  private def combine[A: Combiner](elems: Iterable[A]): A = elems match { // context bounds
+    case h :: t => implicitly[Combiner[A]].combine(h, combine(t))
+    case _ => implicitly[Combiner[A]].unit
+  }
+
+  def sum(a: List[Double]): Double = combine(a)
+
+  def concat(a: Seq[String]): String = combine(a)
+
+  def max(a: List[Int]): Int = combine(a)
+}
+
+object TryFunctionsComb extends App {
   val f: Functions = FunctionsImpl
   println(f.sum(List(10.0,20.0,30.1))) // 60.1
   println(f.sum(List()))                // 0.0
