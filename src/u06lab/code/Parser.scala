@@ -29,13 +29,19 @@ trait NonEmpty[T] extends Parser[T]{
 class NonEmptyParser(chars: Set[Char]) extends BasicParser(chars) with NonEmpty[Char]
 
 trait NotTwoConsecutive[T] extends Parser[T]{
-  // ???
+  private[this] var old : T = _
+  abstract override def parse(t: T): Boolean = { val correct = t != old; old = t; correct && super.parse(t) }
 }
 
-class NotTwoConsecutiveParser(chars: Set[Char]) extends BasicParser(chars) // ??? with ...
+class NotTwoConsecutiveParser(chars: Set[Char]) extends BasicParser(chars) with NotTwoConsecutive[Char]
 
+object ImplicitConversion{
+  implicit class RichString(base: String) {
+    def charParser(): Parser[Char] = new BasicParser(base.toSet)
+  }
+}
 
-object TryParsers extends App {
+object TryParsersObject extends App {
   def parser = new BasicParser(Set('a','b','c'))
   println(parser.parseAll("aabc".toList)) // true
   println(parser.parseAll("aabcdc".toList)) // false
@@ -59,7 +65,8 @@ object TryParsers extends App {
   println(parserNTCNE.parseAll("XYYZ".toList)) // false
   println(parserNTCNE.parseAll("".toList)) // false
 
-  def sparser : Parser[Char] = ??? // "abc".charParser()
+  import ImplicitConversion._
+  def sparser : Parser[Char] = "abc".charParser()
   println(sparser.parseAll("aabc".toList)) // true
   println(sparser.parseAll("aabcdc".toList)) // false
   println(sparser.parseAll("".toList)) // true
