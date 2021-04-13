@@ -1,6 +1,6 @@
 package u06lab.code
 
-object TicTacToe {
+object TicTacToe extends App {
   sealed trait Player{
     def other: Player = this match {case X => O; case _ => X}
     override def toString: String = this match {case X => "X"; case _ => "O"}
@@ -12,9 +12,12 @@ object TicTacToe {
   type Board = List[Mark]
   type Game = List[Board]
 
-  def find(board: Board, x: Int, y: Int): Option[Player] = ???
+  def find(board: Board, x: Int, y: Int): Option[Player] = board find { mark => mark.x == x && mark.y == y } map { _.player }
 
-  def placeAnyMark(board: Board, player: Player): Seq[Board] = ???
+  def placeAnyMark(board: Board, player: Player): Seq[Board] = board match {
+    case Nil => for(x <- 0 to 2 ; y <- 0 to 2) yield List(Mark(x, y, player))
+    case _ => for(x <- 0 to 2 ; y <- 0 to 2; mark <- board if mark.x != x || mark.y !=y) yield mark :: List(Mark(x, y, player))
+  }
 
   def computeAnyGame(player: Player, moves: Int): Stream[Game] = ???
 
