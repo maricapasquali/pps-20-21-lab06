@@ -14,10 +14,9 @@ object TicTacToe extends App {
 
   def find(board: Board, x: Int, y: Int): Option[Player] = board find { mark => mark.x == x && mark.y == y } map { _.player }
 
-  def placeAnyMark(board: Board, player: Player): Seq[Board] = board match {
-    case Nil => for(x <- 0 to 2 ; y <- 0 to 2) yield List(Mark(x, y, player))
-    case _ => for(x <- 0 to 2 ; y <- 0 to 2; mark <- board if mark.x != x || mark.y !=y) yield mark :: List(Mark(x, y, player))
-  }
+  def placeAnyMark(board: Board, player: Player): Seq[Board] =
+    for ( (x, y) <- ( for (x <- 0 to 2; y <- 0 to 2) yield (x, y) ).diff( board.map(m => (m.x, m.y) )) )
+      yield board appended Mark(x, y, player)
 
   def computeAnyGame(player: Player, moves: Int): Stream[Game] = ???
 
