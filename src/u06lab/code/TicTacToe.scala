@@ -15,10 +15,14 @@ object TicTacToe extends App {
   def find(board: Board, x: Int, y: Int): Option[Player] = board find { mark => mark.x == x && mark.y == y } map { _.player }
 
   def placeAnyMark(board: Board, player: Player): Seq[Board] =
-    for ( (x, y) <- ( for (x <- 0 to 2; y <- 0 to 2) yield (x, y) ).diff( board.map(m => (m.x, m.y) )) )
-      yield board appended Mark(x, y, player)
+    for (x <- 0 to 2; y <- 0 to 2; if find(board, x, y).isEmpty) yield board :+ Mark(x, y, player)
 
-  def computeAnyGame(player: Player, moves: Int): Stream[Game] = ???
+  def computeAnyGame(player: Player, moves: Int): Stream[Game] = moves match {
+    case x if x < 0 || x > 9 => throw new IllegalArgumentException("parameter 'moves' is between 0 and 9")
+    case 0 => Stream[Game](List[Board](List[Mark]()))
+    case 1 => (for (board <- placeAnyMark(List(), player)) yield board :: List[Mark]() :: List[Board]()).toStream
+    case _ => for (game <- computeAnyGame(player.other, moves - 1); board <- placeAnyMark(game.head, player)) yield board +: game
+  }
 
   def printBoards(game: Seq[Board]): Unit =
     for (y <- 0 to 2; board <- game.reverse; x <- 0 to 2) {
@@ -42,7 +46,7 @@ object TicTacToe extends App {
   //..X ... ... .X. ... ... X.. ...
 
   // Exercise 3 (ADVANCED!): implement computeAnyGame such that..
-  computeAnyGame(O, 4) foreach {g => printBoards(g); println()}
+  computeAnyGame(O, 4).zipWithIndex foreach {g => println(s"Game #${g._2 + 1}"); printBoards(g._1); println()}
   //... X.. X.. X.. XO.
   //... ... O.. O.. O..
   //... ... ... X.. X..
